@@ -64,8 +64,36 @@ export const stateOptions = [
   { value: 'WY', label: 'Wyoming' },
 ];
 
+function getElasticSearch() {
+	const myHeaders = new Headers();
+
+	myHeaders.append('Content-Type', 'application/json');
+	myHeaders.append('Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1lZGljYXRpb25fY2F0YWxvZ0B0ZXN0LmNvbSIsIl9pZCI6IjVkOGIzMTA2N2VhNDBjNTM2NDQ4MTY1OCIsImlhdCI6MTU2OTQ4ODQ0NywiZXhwIjoxNjAxMDI0NDQ3fQ.nzvZ999pcagZbp2OfzrIWqS8fDkxeYm3rYsefO4YZDI');
+
+	return fetch('https://cpcr01.tcd.ie/snomedapi/api/v1/medication_catalog/search/elastic/ipu_vtm/paracetamol', {
+	  method: 'GET',
+	  headers: myHeaders,
+	})
+	.then(response => {
+	    if (response.status === 200) {
+	      console.log(response);
+	      console.log("Testing response log");
+	      return response.json();
+	    } else {
+	      throw new Error('Something went wrong on api server!');
+	    }
+	  })
+	  .then(response => {
+	    console.debug(response);
+	  }).catch(error => {
+	    console.error(error);
+	  });
+}
+
+
 export default class SingleSelect extends Component {
   getAsyncOptions(inputValue) {
+    getElasticSearch();
     return new Promise((resolve, reject) => {
       const filtered = _.filter(stateOptions, o =>
         _.startsWith(_.toLower(o.label), _.toLower(inputValue))
