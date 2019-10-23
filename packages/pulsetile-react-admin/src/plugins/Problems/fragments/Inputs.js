@@ -38,6 +38,7 @@ import axios from "axios";
 
  const suggestions = [];
  const genericSuggestions = [];
+ const brandSuggestions = [];
 
 function renderInput(inputProps) {
   const { InputProps, classes, ref, ...other } = inputProps;
@@ -110,7 +111,7 @@ function performSearch(value)
                 value: element._id
               }
             });
-            console.log(searchResults);
+            //console.log(searchResults);
             suggestions = searchResults;
             //setSuggestions(searchResults);
             //console.log(suggestions);
@@ -141,8 +142,39 @@ function performSearchGeneric(value)
                 value: element._id
               }
             });
-            console.log(searchResults);
+            //console.log(searchResults);
             genericSuggestions = searchResults;
+            //setSuggestions(searchResults);
+            //console.log(genericSuggestions);
+          }
+        })
+        .catch(error => {
+          return error;
+        });
+    }
+}
+
+function performSearchBrand(value)
+{
+	const apiUrl = `https://cpcr01.tcd.ie/snomedapi/api/v1/medication_catalog/search/elastic/ipu_amp`;
+    let url = `${apiUrl}/${value}`;
+    if (value !== "") {
+      axios
+        .get(url, {
+          headers: {
+            Authorization: `JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1lZGljYXRpb25fY2F0YWxvZ0B0ZXN0LmNvbSIsIl9pZCI6IjVkOGIzMTA2N2VhNDBjNTM2NDQ4MTY1OCIsImlhdCI6MTU2OTQ4ODQ0NywiZXhwIjoxNjAxMDI0NDQ3fQ.nzvZ999pcagZbp2OfzrIWqS8fDkxeYm3rYsefO4YZDI`
+          }
+        }) //paracetamol venlafaxine bupropion
+        .then(response => {
+          if (response.data.hits !== undefined) {
+            let searchResults = response.data.hits.hits.map(element => {
+              return {
+                label: element._source.NM.toString(),
+                value: element._id
+              }
+            });
+            //console.log(searchResults);
+            brandSuggestions = searchResults;
             //setSuggestions(searchResults);
             //console.log(genericSuggestions);
           }
@@ -186,6 +218,28 @@ function getSuggestionsGeneric(value, { showEmpty = false } = {}) {
   return inputLength === 0 && !showEmpty
     ? []
     : genericSuggestions.filter(suggestion => {
+        const keep =
+          count < 5 && suggestion.label.slice(0, inputLength).toLowerCase() === inputValue;
+
+        if (keep) {
+          count += 1;
+        }
+
+        return keep;
+      });
+}
+
+function getSuggestionsBrand(value, { showEmpty = false } = {}) {
+
+  const inputValue = deburr(value.trim()).toLowerCase();
+  const inputLength = inputValue.length;
+  let count = 0;
+
+  performSearchBrand(value);
+
+  return inputLength === 0 && !showEmpty
+    ? []
+    : brandSuggestions.filter(suggestion => {
         const keep =
           count < 5 && suggestion.label.slice(0, inputLength).toLowerCase() === inputValue;
 
@@ -291,6 +345,53 @@ function getSuggestionsGeneric(value, { showEmpty = false } = {}) {
      </Downshift>
  );
 
+ const renderTextFieldBrand = ({ classes, input, label, meta: { touched, error }, ...custom }) => (
+   <Downshift id="downshift-simple" {...input} >
+       {({
+         getInputProps,
+         getItemProps,
+         getLabelProps,
+         getMenuProps,
+         highlightedIndex,
+         inputValue,
+         isOpen,
+         selectedItem,
+       }) => {
+         const { onBlur, onFocus, ...inputProps } = getInputProps({
+           placeholder: 'Search for a Brand Medication',
+         });
+
+         return (
+           <div>
+             {renderInput({
+               fullWidth: true,
+               label: 'Brand',
+               InputLabelProps: getLabelProps({ shrink: true }),
+               InputProps: { onBlur, onFocus, disableUnderline: true },
+               inputProps,
+             })}
+
+             <div {...getMenuProps()}>
+               {isOpen ? (
+                 <Paper square>
+                   {getSuggestionsBrand(inputValue).map((suggestion, index) =>
+                     renderSuggestion({
+                       suggestion,
+                       index,
+                       itemProps: getItemProps({ item: suggestion.label, disableUnderline: true }),
+                       highlightedIndex,
+                       selectedItem,
+                     }),
+                   )}
+                 </Paper>
+               ) : null}
+             </div>
+           </div>
+         );
+       }}
+     </Downshift>
+ );
+
 const ProblemsInput = ({ classes, ...rest }) => (
     <span>
         <Field name="problem"  component={renderTextField}/>
@@ -300,6 +401,12 @@ const ProblemsInput = ({ classes, ...rest }) => (
 const GenericFormulaInput = ({ classes, ...rest }) => (
     <span>
         <Field name="problemGeneric"  component={renderTextFieldGeneric}/>
+    </span>
+);
+
+const BrandFormulaInput = ({ classes, ...rest }) => (
+    <span>
+        <Field name="problemBrand"  component={renderTextFieldBrand}/>
     </span>
 );
 
@@ -316,6 +423,13 @@ const ProblemsInputs = ({ classes, ...rest }) => (
 
         <FormGroup className={classes.formGroup}>
       	    <GenericFormulaInput
+                InputProps={{ disableUnderline: true, classes: { root: classes.customRoot, input: classes.customInput } }}
+                InputLabelProps={{ shrink: true, className: classes.customFormLabel }}
+             />
+        </FormGroup>
+
+        <FormGroup className={classes.formGroup}>
+      	    <BrandFormulaInput
                 InputProps={{ disableUnderline: true, classes: { root: classes.customRoot, input: classes.customInput } }}
                 InputLabelProps={{ shrink: true, className: classes.customFormLabel }}
              />
