@@ -9,7 +9,7 @@
     "projects/*"
   ],
   "dependencies": {
-    "@fortawesome/free-solid-svg-icons": "^5.11.2",
+    "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "downshift": "^3.3.4",
     "react-select": "^3.0.5"
   }
